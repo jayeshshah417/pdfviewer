@@ -13,6 +13,8 @@ import android.webkit.WebView;
 
 import androidx.annotation.RawRes;
 
+import com.japps.pdfviewer.R;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
