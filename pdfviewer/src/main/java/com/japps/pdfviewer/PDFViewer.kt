@@ -6,7 +6,9 @@ import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
 import android.util.AttributeSet
 import android.util.Base64
+import android.webkit.WebSettings
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.annotation.RawRes
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -36,6 +38,13 @@ class PDFViewer : WebView {
         initialize(context, attrs)
     }
 
+    private class MyWebViewClient : WebViewClient() {
+        override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+            view?.loadUrl(url!!)
+            return true
+        }
+    }
+
     private fun initialize(context: Context, attrs: AttributeSet?) {
         val settings = settings
         settings.javaScriptEnabled = true // Enable JavaScript for PDF viewing
@@ -44,6 +53,23 @@ class PDFViewer : WebView {
         settings.setSupportZoom(true)
         settings.useWideViewPort = true
         settings.loadWithOverviewMode = true
+        webViewClient =  MyWebViewClient()
+
+        settings.setMediaPlaybackRequiresUserGesture(false);
+        settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK)
+        settings.userAgentString = "'Mozilla/5.0 (Linux; Android 10; Pixel 3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Mobile Safari/537.36'"
+        settings.javaScriptEnabled = true // JavaScript support
+        settings.domStorageEnabled = true // DOM Storage support
+        settings.loadWithOverviewMode = true
+        settings.useWideViewPort = true
+        settings.builtInZoomControls = true // Zoom controls
+        settings.displayZoomControls = false // Don't display built-in zoom controls
+        settings.setSupportMultipleWindows(true) // Multiple windows support
+        settings.allowContentAccess = true // Content access
+        settings.allowFileAccess = true // File access
+        settings.allowFileAccessFromFileURLs = true // File access from file URLs
+        settings.allowUniversalAccessFromFileURLs = true // Universal access from file URLs
+
         if (attrs != null) {
             // Read custom attributes if any (e.g., raw file id)
             val a = context.obtainStyledAttributes(attrs, R.styleable.PDFViewer)
@@ -56,7 +82,7 @@ class PDFViewer : WebView {
         }
     }
 
-    fun bitmapToBase64(bitmap: Bitmap): String {
+    private fun bitmapToBase64(bitmap: Bitmap): String {
         val byteArrayOutputStream = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
         val byteArray = byteArrayOutputStream.toByteArray()
@@ -64,13 +90,7 @@ class PDFViewer : WebView {
     }
 
     @Throws(IOException::class)
-    private fun openRenderer(context: Context, rawFileId: Int) {
-        // Copy PDF file from res/raw to app's cache directory
-
-
-        var file = File(context.cacheDir, "webview.pdf")
-
-        file = copyRawFile(rawFileId, file) // Replace with your PDF file
+    private fun openRenderer(file: File) {
 
         parcelFileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
         pdfRenderer = PdfRenderer(parcelFileDescriptor!!)
@@ -93,11 +113,24 @@ class PDFViewer : WebView {
 
 
     fun loadPdfFromRaw(context: Context, @RawRes rawFileId: Int) {
+        // Load PDF file from res/raw
+        try {
+            var file = File(context.cacheDir, "webview.pdf")
+
+            file = copyRawFile(rawFileId, file) // Replace with your PDF file
+
+           loadPdfFromRaw(file)
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+    }
+
+    fun loadPdfFromRaw(file: File) {
         val bitmaps: MutableList<Bitmap> = ArrayList()
 
         // Load PDF file from res/raw
         try {
-            openRenderer(context, rawFileId)
+            openRenderer(file)
             //displayPages();
             for (i in 0 until pageCount) {
                 bitmaps.add(pageBitmap(i))

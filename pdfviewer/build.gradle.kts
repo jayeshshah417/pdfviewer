@@ -1,6 +1,8 @@
 plugins {
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.jetbrains.kotlin.android)
+    id("com.android.library")  // Updated Android Gradle Plugin version
+    id("kotlin-android")       // Updated Kotlin plugin version
+    id("maven-publish")
+
 }
 
 android {
@@ -30,6 +32,8 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+
+
 }
 
 dependencies {
@@ -40,4 +44,14 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+}
+
+afterEvaluate{
+    android.libraryVariants.forEach {
+        variant-> publishing.publications.create(variant.name,MavenPublication::class.java){
+            groupId = "com.github.jayeshshah417"
+            artifactId = "pdfviewer"
+            version = "0.0.1"
+    }
+    }
 }
